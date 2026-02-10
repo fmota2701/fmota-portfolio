@@ -9,10 +9,6 @@ import { getSocialIcon } from "./icons/SocialIcons";
 export function Contact() {
     const [personal, setPersonal] = useState(portfolioData.personal);
     const [social, setSocial] = useState(portfolioData.social);
-    const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -30,27 +26,8 @@ export function Contact() {
         loadData();
     }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        // Format message for WhatsApp
-        const whatsappNumber = personal.whatsapp?.replace(/[^0-9]/g, "") || "5511999999999";
-        const message = `*Novo contato do Portfólio*\n\n*Nome:* ${formData.name}\n*Email:* ${formData.email}\n\n*Mensagem:*\n${formData.message}`;
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-        // Small delay for UX
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Open WhatsApp
-        window.open(whatsappUrl, "_blank");
-
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", message: "" });
-        setTimeout(() => setIsSubmitted(false), 3000);
-    };
+    const whatsappNumber = (personal as typeof personal & { whatsapp?: string }).whatsapp?.replace(/[^0-9]/g, "") || "5511999999999";
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá! Vi seu portfólio e gostaria de conversar sobre um projeto.")}`;
 
     return (
         <Section
@@ -59,18 +36,17 @@ export function Contact() {
             subtitle="Vamos criar algo incrível juntos"
             variant="dark"
         >
-            <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                {/* Contact Info - Enhanced */}
+            <div className="max-w-3xl mx-auto">
                 <motion.div
-                    initial={{ opacity: 0, x: -30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: false }}
-                    className="space-y-8"
+                    className="space-y-10"
                 >
-                    {/* Social Links - Enhanced */}
-                    <div>
-                        <p className="text-[#8A8A9A] text-sm mb-4 font-medium">Redes Sociais</p>
-                        <div className="flex gap-3">
+                    {/* Social Links */}
+                    <div className="text-center">
+                        <p className="text-[#8A8A9A] text-sm mb-5 font-medium">Redes Sociais</p>
+                        <div className="flex gap-3 justify-center">
                             {social.map((item, index) => (
                                 <motion.a
                                     key={item.name}
@@ -101,173 +77,93 @@ export function Contact() {
                         </div>
                     </div>
 
+                    {/* WhatsApp CTA */}
+                    <motion.div
+                        className="relative p-8 md:p-10 rounded-2xl overflow-hidden text-center"
+                        style={{
+                            background: "linear-gradient(135deg, rgba(14,14,26,0.98) 0%, rgba(6,6,16,0.99) 100%)",
+                            border: "1px solid rgba(37,211,102,0.15)",
+                        }}
+                    >
+                        {/* Top glow */}
+                        <div
+                            className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px"
+                            style={{
+                                background: "linear-gradient(90deg, transparent, rgba(37,211,102,0.5), transparent)",
+                            }}
+                        />
+
+                        <motion.span
+                            className="text-5xl md:text-6xl inline-block mb-4"
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                            💬
+                        </motion.span>
+
+                        <h3 className="text-white text-xl md:text-2xl font-bold mb-2">
+                            Pronto para o próximo jackpot?
+                        </h3>
+                        <p className="text-[#8A8A9A] text-sm md:text-base mb-8">
+                            Vamos criar algo épico juntos. Clique abaixo e fale comigo direto no WhatsApp!
+                        </p>
+
+                        <motion.a
+                            href={whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            whileHover={{
+                                scale: 1.03,
+                                boxShadow: "0 0 40px rgba(37,211,102,0.35)",
+                            }}
+                            whileTap={{ scale: 0.97 }}
+                            className="inline-flex items-center justify-center gap-3 px-10 py-4 rounded-xl font-bold text-base cursor-pointer transition-all relative overflow-hidden"
+                            style={{
+                                background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
+                                color: "#fff",
+                                boxShadow: "0 4px 20px rgba(37,211,102,0.25)",
+                            }}
+                        >
+                            {/* Shimmer effect */}
+                            <motion.div
+                                className="absolute inset-0"
+                                style={{
+                                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
+                                }}
+                                animate={{ x: ["-100%", "200%"] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                            />
+                            <span className="relative z-10 flex items-center gap-3 text-lg">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                </svg>
+                                Falar no WhatsApp
+                            </span>
+                        </motion.a>
+                    </motion.div>
+
                     {/* Decorative element */}
                     <motion.div
-                        className="relative p-6 rounded-2xl overflow-hidden"
+                        className="relative p-5 rounded-2xl overflow-hidden"
                         style={{
                             background: "linear-gradient(135deg, rgba(188,210,0,0.05) 0%, rgba(6,6,16,0.9) 100%)",
                             border: "1px solid rgba(188,210,0,0.1)",
                         }}
                     >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 justify-center">
                             <motion.span
-                                className="text-4xl"
+                                className="text-3xl"
                                 animate={{ rotate: [0, 10, 0, -10, 0] }}
                                 transition={{ duration: 4, repeat: Infinity }}
                             >
                                 🎰
                             </motion.span>
                             <div>
-                                <p className="text-white font-semibold">Pronto para o próximo jackpot?</p>
-                                <p className="text-[#8A8A9A] text-sm">Vamos criar algo épico juntos</p>
+                                <p className="text-white font-semibold text-sm">Resposta rápida garantida</p>
+                                <p className="text-[#8A8A9A] text-xs">Normalmente respondo em poucos minutos</p>
                             </div>
                         </div>
                     </motion.div>
-                </motion.div>
-
-                {/* Contact Form - Enhanced */}
-                <motion.div
-                    initial={{ opacity: 0, x: 30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: false }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <motion.div
-                            className="relative p-8 rounded-2xl overflow-hidden"
-                            style={{
-                                background: "linear-gradient(135deg, rgba(14,14,26,0.98) 0%, rgba(6,6,16,0.99) 100%)",
-                                border: "1px solid rgba(188,210,0,0.1)",
-                            }}
-                        >
-                            {/* Top glow */}
-                            <div
-                                className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px"
-                                style={{
-                                    background: "linear-gradient(90deg, transparent, rgba(188,210,0,0.4), transparent)",
-                                }}
-                            />
-
-                            <div className="space-y-5">
-                                {/* Name Field */}
-                                <div className="relative">
-                                    <label className="text-[#8A8A9A] text-sm mb-2 block font-medium">Nome</label>
-                                    <motion.input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        onFocus={() => setFocusedField("name")}
-                                        onBlur={() => setFocusedField(null)}
-                                        placeholder="Seu nome"
-                                        required
-                                        aria-required="true"
-                                        className="w-full px-5 py-4 rounded-xl text-white placeholder-[#52525B] outline-none transition-all"
-                                        style={{
-                                            background: "rgba(6,6,16,0.8)",
-                                            border: focusedField === "name"
-                                                ? "1px solid rgba(188,210,0,0.4)"
-                                                : "1px solid rgba(188,210,0,0.1)",
-                                            boxShadow: focusedField === "name"
-                                                ? "0 0 20px rgba(188,210,0,0.1)"
-                                                : "none",
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Email Field */}
-                                <div className="relative">
-                                    <label className="text-[#8A8A9A] text-sm mb-2 block font-medium">Email</label>
-                                    <motion.input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        onFocus={() => setFocusedField("email")}
-                                        onBlur={() => setFocusedField(null)}
-                                        placeholder="seu@email.com"
-                                        required
-                                        aria-required="true"
-                                        className="w-full px-5 py-4 rounded-xl text-white placeholder-[#52525B] outline-none transition-all"
-                                        style={{
-                                            background: "rgba(6,6,16,0.8)",
-                                            border: focusedField === "email"
-                                                ? "1px solid rgba(188,210,0,0.4)"
-                                                : "1px solid rgba(188,210,0,0.1)",
-                                            boxShadow: focusedField === "email"
-                                                ? "0 0 20px rgba(188,210,0,0.1)"
-                                                : "none",
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Message Field */}
-                                <div className="relative">
-                                    <label className="text-[#8A8A9A] text-sm mb-2 block font-medium">Mensagem</label>
-                                    <motion.textarea
-                                        value={formData.message}
-                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                        onFocus={() => setFocusedField("message")}
-                                        onBlur={() => setFocusedField(null)}
-                                        placeholder="Descreva seu projeto..."
-                                        required
-                                        aria-required="true"
-                                        rows={4}
-                                        className="w-full px-5 py-4 rounded-xl text-white placeholder-[#52525B] outline-none resize-none transition-all"
-                                        style={{
-                                            background: "rgba(6,6,16,0.8)",
-                                            border: focusedField === "message"
-                                                ? "1px solid rgba(188,210,0,0.4)"
-                                                : "1px solid rgba(188,210,0,0.1)",
-                                            boxShadow: focusedField === "message"
-                                                ? "0 0 20px rgba(188,210,0,0.1)"
-                                                : "none",
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Submit Button - Enhanced */}
-                                <motion.button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    whileHover={{
-                                        scale: 1.02,
-                                        boxShadow: "0 0 40px rgba(188,210,0,0.3)",
-                                    }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className={`w-full py-4 rounded-xl font-bold text-base cursor-pointer transition-all relative overflow-hidden ${isSubmitted ? "bg-green-600 text-white" : "btn-fortune"
-                                        }`}
-                                >
-                                    {/* Shimmer effect */}
-                                    {!isSubmitted && (
-                                        <motion.div
-                                            className="absolute inset-0"
-                                            style={{
-                                                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
-                                            }}
-                                            animate={{ x: ["-100%", "200%"] }}
-                                            transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 flex items-center justify-center gap-2">
-                                        {isSubmitting ? (
-                                            <>
-                                                <motion.span
-                                                    animate={{ rotate: 360 }}
-                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                                >
-                                                    ◆
-                                                </motion.span>
-                                                Enviando...
-                                            </>
-                                        ) : isSubmitted ? (
-                                            <>✓ Mensagem Enviada!</>
-                                        ) : (
-                                            <>Enviar Mensagem →</>
-                                        )}
-                                    </span>
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </form>
                 </motion.div>
             </div>
         </Section>
