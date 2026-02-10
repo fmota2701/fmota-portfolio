@@ -350,7 +350,7 @@ function PersonalTab({ data, setData }: TabProps) {
                         />
 
                         {currentPhoto ? (
-                            <div className="relative aspect-square">
+                            <div className="relative" style={{ aspectRatio: "4/5" }}>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={currentPhoto}
@@ -364,7 +364,7 @@ function PersonalTab({ data, setData }: TabProps) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-10 text-center aspect-square">
+                            <div className="flex flex-col items-center justify-center py-10 text-center" style={{ aspectRatio: "4/5" }}>
                                 <span className="text-4xl mb-3">📷</span>
                                 <span className="text-sm text-[#8A8A9A]">
                                     Clique para adicionar foto
@@ -426,7 +426,7 @@ function PersonalTab({ data, setData }: TabProps) {
                     image={tempImage}
                     onCropComplete={handleCropComplete}
                     onCancel={handleCropCancel}
-                    aspectRatio={1}
+                    aspectRatio={4 / 5}
                 />
             )}
         </>

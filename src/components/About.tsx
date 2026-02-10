@@ -133,8 +133,9 @@ export function About() {
 
                         {/* Main avatar container */}
                         <motion.div
-                            className="relative w-64 h-64 md:w-80 md:h-80 rounded-2xl overflow-hidden"
+                            className="relative w-64 md:w-80 rounded-2xl overflow-hidden"
                             style={{
+                                aspectRatio: "4/5",
                                 background: "linear-gradient(135deg, rgba(14,14,26,0.95) 0%, rgba(6,6,16,0.98) 100%)",
                                 border: "1px solid rgba(188,210,0,0.2)",
                                 boxShadow: `
@@ -304,62 +305,65 @@ export function About() {
                         <span className="font-medium">{displayPersonal.location}</span>
                     </motion.div>
                 </motion.div>
-            </div>
+            </div >
 
             {/* Stats - Enhanced */}
-            <motion.div
-                initial={{ opacity: 0, y: 30 }}
+            < motion.div
+                initial={{ opacity: 0, y: 30 }
+                }
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-20"
             >
-                {displayStats.map((stat, index) => (
-                    <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: false }}
-                        transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-                        whileHover={{ y: -8, scale: 1.02 }}
-                        className="relative p-6 md:p-8 text-center rounded-2xl overflow-hidden cursor-pointer group"
-                        style={{
-                            background: "linear-gradient(135deg, rgba(14,14,26,0.98) 0%, rgba(6,6,16,0.99) 100%)",
-                            border: "1px solid rgba(188,210,0,0.1)",
-                        }}
-                    >
-                        {/* Hover border glow */}
+                {
+                    displayStats.map((stat, index) => (
                         <motion.div
-                            className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            key={stat.label}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: false }}
+                            transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="relative p-6 md:p-8 text-center rounded-2xl overflow-hidden cursor-pointer group"
                             style={{
-                                boxShadow: "inset 0 0 0 1px rgba(188,210,0,0.3), 0 0 30px rgba(188,210,0,0.1)",
-                            }}
-                        />
-
-                        {/* Top glow line */}
-                        <div
-                            className="absolute top-0 left-1/2 -translate-x-1/2 w-0 group-hover:w-2/3 h-px transition-all duration-500"
-                            style={{
-                                background: "linear-gradient(90deg, transparent, #bcd200, transparent)",
-                            }}
-                        />
-
-                        {/* Value with glow */}
-                        <motion.div
-                            className="text-4xl md:text-5xl font-black mb-2"
-                            style={{
-                                background: "linear-gradient(180deg, #EBF3AD 0%, #bcd200 50%, #9AB000 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                filter: "drop-shadow(0 0 20px rgba(188,210,0,0.3))",
+                                background: "linear-gradient(135deg, rgba(14,14,26,0.98) 0%, rgba(6,6,16,0.99) 100%)",
+                                border: "1px solid rgba(188,210,0,0.1)",
                             }}
                         >
-                            {stat.value}
+                            {/* Hover border glow */}
+                            <motion.div
+                                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                style={{
+                                    boxShadow: "inset 0 0 0 1px rgba(188,210,0,0.3), 0 0 30px rgba(188,210,0,0.1)",
+                                }}
+                            />
+
+                            {/* Top glow line */}
+                            <div
+                                className="absolute top-0 left-1/2 -translate-x-1/2 w-0 group-hover:w-2/3 h-px transition-all duration-500"
+                                style={{
+                                    background: "linear-gradient(90deg, transparent, #bcd200, transparent)",
+                                }}
+                            />
+
+                            {/* Value with glow */}
+                            <motion.div
+                                className="text-4xl md:text-5xl font-black mb-2"
+                                style={{
+                                    background: "linear-gradient(180deg, #EBF3AD 0%, #bcd200 50%, #9AB000 100%)",
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
+                                    filter: "drop-shadow(0 0 20px rgba(188,210,0,0.3))",
+                                }}
+                            >
+                                {stat.value}
+                            </motion.div>
+                            <div className="text-sm text-[#8A8A9A] font-medium">{stat.label}</div>
                         </motion.div>
-                        <div className="text-sm text-[#8A8A9A] font-medium">{stat.label}</div>
-                    </motion.div>
-                ))}
-            </motion.div>
-        </Section>
+                    ))
+                }
+            </motion.div >
+        </Section >
     );
 }
