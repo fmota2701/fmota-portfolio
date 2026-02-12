@@ -754,6 +754,8 @@ function ExperiencesTab({ data, setData }: TabProps) {
 }
 
 function ProjectsTab({ data, setData }: TabProps) {
+    const [expandedId, setExpandedId] = useState<number | null>(null);
+
     const handleProjectChange = (index: number, field: string, value: string | string[]) => {
         setData((prev) => {
             const newProjects = [...prev.projects];
@@ -764,10 +766,10 @@ function ProjectsTab({ data, setData }: TabProps) {
 
     const addProject = () => {
         const newId = Math.max(...data.projects.map((p) => p.id), 0) + 1;
+        // Shift all existing orders up by 1
         setData((prev) => ({
             ...prev,
             projects: [
-                ...prev.projects,
                 {
                     id: newId,
                     title: "Novo Projeto",
@@ -775,17 +777,41 @@ function ProjectsTab({ data, setData }: TabProps) {
                     description: "",
                     tags: [],
                     image: "",
-                    images: [],
+                    images: [] as string[],
+                    order: 0,
                 },
+                ...prev.projects.map((p) => ({
+                    ...p,
+                    order: ((p as typeof p & { order?: number }).order ?? 0) + 1,
+                })),
             ],
         }));
+        setExpandedId(newId);
     };
 
     const removeProject = (index: number) => {
+        const projectId = data.projects[index].id;
+        if (expandedId === projectId) setExpandedId(null);
         setData((prev) => ({
             ...prev,
             projects: prev.projects.filter((_, i) => i !== index),
         }));
+    };
+
+    const moveProject = (index: number, direction: "up" | "down") => {
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= data.projects.length) return;
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            const temp = newProjects[index];
+            newProjects[index] = newProjects[targetIndex];
+            newProjects[targetIndex] = temp;
+            // Update order values
+            return {
+                ...prev,
+                projects: newProjects.map((p, i) => ({ ...p, order: i })),
+            };
+        });
     };
 
     const addImage = (projectIndex: number, url: string) => {
@@ -816,10 +842,18 @@ function ProjectsTab({ data, setData }: TabProps) {
         });
     };
 
+    // Sort by order field
+    const sortedProjects = [...data.projects]
+        .map((p, originalIndex) => ({ ...p, originalIndex }))
+        .sort((a, b) => ((a as typeof a & { order?: number }).order ?? a.originalIndex) - ((b as typeof b & { order?: number }).order ?? b.originalIndex));
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">Projetos</h2>
+                <div>
+                    <h2 className="text-xl font-bold text-white">Projetos</h2>
+                    <p className="text-[#8A8A9A] text-xs mt-1">{data.projects.length} projeto{data.projects.length !== 1 ? "s" : ""}</p>
+                </div>
                 <motion.button
                     onClick={addProject}
                     whileHover={{ scale: 1.05 }}
@@ -835,97 +869,206 @@ function ProjectsTab({ data, setData }: TabProps) {
                 </motion.button>
             </div>
 
-            <div className="space-y-6">
-                {data.projects.map((project, index) => {
+            <div className="space-y-2">
+                {sortedProjects.map((project, sortedIndex) => {
+                    const index = project.originalIndex;
                     const projectWithImages = project as typeof project & { images?: string[] };
+                    const isExpanded = expandedId === project.id;
+                    const imageCount = (projectWithImages.images || []).length + (project.image ? 1 : 0);
+
                     return (
                         <div
                             key={project.id}
-                            className="p-6 rounded-xl space-y-4"
+                            className="rounded-xl overflow-hidden transition-colors"
                             style={{
-                                background: "rgba(6,6,16,0.5)",
-                                border: "1px solid rgba(188,210,0,0.1)",
+                                background: isExpanded ? "rgba(6,6,16,0.7)" : "rgba(6,6,16,0.4)",
+                                border: isExpanded ? "1px solid rgba(188,210,0,0.25)" : "1px solid rgba(188,210,0,0.08)",
                             }}
                         >
-                            <div className="flex justify-between items-start">
-                                <span className="text-[#bcd200] text-sm font-medium">Projeto #{index + 1}</span>
+                            {/* Compact Row Header */}
+                            <div
+                                onClick={() => setExpandedId(isExpanded ? null : project.id)}
+                                className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all hover:bg-white/[0.02] group"
+                            >
+                                {/* Thumbnail */}
+                                <div
+                                    className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"
+                                    style={{
+                                        background: "rgba(188,210,0,0.05)",
+                                        border: "1px solid rgba(188,210,0,0.1)",
+                                    }}
+                                >
+                                    {project.image ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={project.image} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-[#8A8A9A] text-xs">📁</div>
+                                    )}
+                                </div>
+
+                                {/* Title & Category */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white text-sm font-medium truncate">
+                                        {project.title || "Sem título"}
+                                    </p>
+                                    <p className="text-[#8A8A9A] text-xs truncate">{project.category}</p>
+                                </div>
+
+                                {/* Tags count */}
+                                {project.tags.length > 0 && (
+                                    <span
+                                        className="hidden sm:inline-block px-2 py-0.5 rounded text-xs"
+                                        style={{ background: "rgba(188,210,0,0.08)", color: "#8A8A9A" }}
+                                    >
+                                        {project.tags.length} tag{project.tags.length !== 1 ? "s" : ""}
+                                    </span>
+                                )}
+
+                                {/* Image count */}
+                                {imageCount > 0 && (
+                                    <span
+                                        className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs"
+                                        style={{ background: "rgba(188,210,0,0.08)", color: "#8A8A9A" }}
+                                    >
+                                        🖼 {imageCount}
+                                    </span>
+                                )}
+
+                                {/* Reorder buttons */}
+                                <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => moveProject(index, "up")}
+                                        disabled={sortedIndex === 0}
+                                        className="p-0.5 text-xs rounded transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                                        style={{ color: "#8A8A9A" }}
+                                        title="Mover para cima"
+                                    >
+                                        ▲
+                                    </button>
+                                    <button
+                                        onClick={() => moveProject(index, "down")}
+                                        disabled={sortedIndex === sortedProjects.length - 1}
+                                        className="p-0.5 text-xs rounded transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
+                                        style={{ color: "#8A8A9A" }}
+                                        title="Mover para baixo"
+                                    >
+                                        ▼
+                                    </button>
+                                </div>
+
+                                {/* Delete */}
                                 <button
-                                    onClick={() => removeProject(index)}
-                                    className="p-2 text-[#FF0080] hover:bg-[#FF0080]/10 rounded-lg transition-colors cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeProject(index);
+                                    }}
+                                    className="p-1.5 text-[#FF0080]/60 hover:text-[#FF0080] hover:bg-[#FF0080]/10 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                                    title="Remover projeto"
                                 >
                                     ✕
                                 </button>
+
+                                {/* Chevron */}
+                                <motion.span
+                                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-[#8A8A9A] text-xs flex-shrink-0"
+                                >
+                                    ▼
+                                </motion.span>
                             </div>
 
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <InputField
-                                    label="Título"
-                                    value={project.title}
-                                    onChange={(v) => handleProjectChange(index, "title", v)}
-                                />
-                                <InputField
-                                    label="Categoria"
-                                    value={project.category}
-                                    onChange={(v) => handleProjectChange(index, "category", v)}
-                                />
-                            </div>
+                            {/* Expanded Edit Form */}
+                            <motion.div
+                                initial={false}
+                                animate={{
+                                    height: isExpanded ? "auto" : 0,
+                                    opacity: isExpanded ? 1 : 0,
+                                }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                style={{ overflow: "hidden" }}
+                            >
+                                <div className="px-4 pb-5 pt-2 space-y-4" style={{ borderTop: "1px solid rgba(188,210,0,0.08)" }}>
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <InputField
+                                            label="Título"
+                                            value={project.title}
+                                            onChange={(v) => handleProjectChange(index, "title", v)}
+                                        />
+                                        <InputField
+                                            label="Categoria"
+                                            value={project.category}
+                                            onChange={(v) => handleProjectChange(index, "category", v)}
+                                        />
+                                    </div>
 
-                            <TextareaField
-                                label="Descrição"
-                                value={project.description}
-                                onChange={(v) => handleProjectChange(index, "description", v)}
-                                rows={2}
-                            />
-
-                            <InputField
-                                label="Tags (separadas por vírgula)"
-                                value={project.tags.join(", ")}
-                                onChange={(v) => handleProjectChange(index, "tags", v.split(",").map((t) => t.trim()))}
-                            />
-
-                            {/* Cover Image Upload with Crop */}
-                            <CoverImageUploader
-                                currentImage={project.image}
-                                onImageChange={(url) => handleProjectChange(index, "image", url)}
-                                recommendedSize="1200 x 800px"
-                            />
-
-                            {/* Gallery Images */}
-                            <div className="space-y-3">
-                                <label className="text-[#8A8A9A] text-sm font-medium block">Galeria de Imagens</label>
-
-                                {/* Existing Images */}
-                                <div className="grid grid-cols-4 gap-3">
-                                    {(projectWithImages.images || []).map((img, imgIndex) => (
-                                        <div
-                                            key={imgIndex}
-                                            className="relative aspect-square rounded-lg overflow-hidden group"
-                                            style={{ background: "rgba(6,6,16,0.8)", border: "1px solid rgba(188,210,0,0.1)" }}
-                                        >
-                                            {img && (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={img} alt="" className="w-full h-full object-cover" />
-                                            )}
-                                            <button
-                                                onClick={() => removeImage(index, imgIndex)}
-                                                className="absolute top-1 right-1 w-6 h-6 bg-[#FF0080] text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                            >
-                                                ✕
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Upload New Images */}
-                                <div className="mt-4">
-                                    <ImageUploader
-                                        label="Adicionar Imagens"
-                                        multiple={true}
-                                        onUpload={(url) => addImage(index, url)}
-                                        onUploadMultiple={(urls) => addMultipleImages(index, urls)}
+                                    <TextareaField
+                                        label="Descrição"
+                                        value={project.description}
+                                        onChange={(v) => handleProjectChange(index, "description", v)}
+                                        rows={2}
                                     />
+
+                                    <InputField
+                                        label="Tags (separadas por vírgula)"
+                                        value={project.tags.join(", ")}
+                                        onChange={(v) => handleProjectChange(index, "tags", v.split(",").map((t) => t.trim()))}
+                                    />
+
+                                    {/* Cover Image Upload with Crop */}
+                                    <CoverImageUploader
+                                        currentImage={project.image}
+                                        onImageChange={(url) => handleProjectChange(index, "image", url)}
+                                        recommendedSize="1200 x 800px"
+                                    />
+
+                                    {/* Gallery Images */}
+                                    <div className="space-y-3">
+                                        <label className="text-[#8A8A9A] text-sm font-medium block">Galeria de Imagens</label>
+
+                                        {/* Masonry Gallery Grid */}
+                                        <div style={{ columns: "3 200px", columnGap: "12px" }}>
+                                            {(projectWithImages.images || []).map((img, imgIndex) => (
+                                                <div
+                                                    key={imgIndex}
+                                                    className="relative rounded-lg overflow-hidden group/img mb-3"
+                                                    style={{
+                                                        background: "rgba(6,6,16,0.8)",
+                                                        border: "1px solid rgba(188,210,0,0.1)",
+                                                        breakInside: "avoid",
+                                                    }}
+                                                >
+                                                    {img && (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img
+                                                            src={img}
+                                                            alt=""
+                                                            className="w-full h-auto block rounded-lg"
+                                                            style={{ display: "block" }}
+                                                        />
+                                                    )}
+                                                    <button
+                                                        onClick={() => removeImage(index, imgIndex)}
+                                                        className="absolute top-2 right-2 w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer flex items-center justify-center shadow-lg"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Upload New Images */}
+                                        <div className="mt-4">
+                                            <ImageUploader
+                                                label="Adicionar Imagens"
+                                                multiple={true}
+                                                onUpload={(url) => addImage(index, url)}
+                                                onUploadMultiple={(urls) => addMultipleImages(index, urls)}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
                     );
                 })}

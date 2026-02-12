@@ -63,6 +63,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["Photoshop", "Illustrator", "iGaming"],
       image: "/projects/fortune-tiger.jpg",
       images: [] as string[],
+      order: 0,
     },
     {
       id: 2,
@@ -72,6 +73,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["After Effects", "Motion", "3D"],
       image: "/projects/fortune-ox.jpg",
       images: [],
+      order: 1,
     },
     {
       id: 3,
@@ -81,6 +83,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["Full Campaign", "iGaming", "Design"],
       image: "/projects/fortune-rabbit.jpg",
       images: [],
+      order: 2,
     },
     {
       id: 4,
@@ -90,6 +93,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["UI Design", "Figma", "Games"],
       image: "/projects/slot-ui.jpg",
       images: [],
+      order: 3,
     },
     {
       id: 5,
@@ -99,6 +103,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["Video", "After Effects", "Marketing"],
       image: "/projects/casino-promo.jpg",
       images: [],
+      order: 4,
     },
     {
       id: 6,
@@ -108,6 +113,7 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
       tags: ["Character", "Illustration", "iGaming"],
       image: "/projects/lucky-dragon.jpg",
       images: [],
+      order: 5,
     },
   ],
 
