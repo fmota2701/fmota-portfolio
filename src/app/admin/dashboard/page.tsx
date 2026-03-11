@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { portfolioData as defaultData } from "@/lib/data";
+import { portfolioData as defaultData, type PortfolioData, type Project, type ProjectBlock } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { CoverImageUploader } from "@/components/admin/CoverImageUploader";
 import { ImageCropper } from "@/components/admin/ImageCropper";
@@ -13,7 +13,7 @@ type TabType = "personal" | "stats" | "skills" | "experiences" | "projects" | "s
 export default function AdminDashboard() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<TabType>("personal");
-    const [data, setData] = useState(defaultData);
+    const [data, setData] = useState<PortfolioData>(defaultData);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [saveMessage, setSaveMessage] = useState("");
@@ -756,7 +756,7 @@ function ExperiencesTab({ data, setData }: TabProps) {
 function ProjectsTab({ data, setData }: TabProps) {
     const [expandedId, setExpandedId] = useState<number | null>(null);
 
-    const handleProjectChange = (index: number, field: string, value: string | string[]) => {
+    const handleProjectChange = <K extends keyof Project>(index: number, field: K, value: Project[K]) => {
         setData((prev) => {
             const newProjects = [...prev.projects];
             newProjects[index] = { ...newProjects[index], [field]: value };
@@ -779,6 +779,7 @@ function ProjectsTab({ data, setData }: TabProps) {
                     image: "",
                     images: [] as string[],
                     order: 0,
+                    content: [],
                 },
                 ...prev.projects.map((p) => ({
                     ...p,
@@ -860,10 +861,51 @@ function ProjectsTab({ data, setData }: TabProps) {
         });
     };
 
-    const reorderImages = (projectIndex: number, newImages: string[]) => {
+    const addBlock = (projectIndex: number, type: ProjectBlock['type']) => {
         setData((prev) => {
             const newProjects = [...prev.projects];
-            newProjects[projectIndex] = { ...newProjects[projectIndex], images: newImages };
+            const project = newProjects[projectIndex] as Project;
+            const content = [...(project.content || [])];
+            
+            let newBlock: ProjectBlock;
+            const id = Math.random().toString(36).substr(2, 9);
+            
+            if (type === 'image') newBlock = { id, type: 'image', url: '' };
+            else if (type === 'text') newBlock = { id, type: 'text', text: '' };
+            else newBlock = { id, type: 'grid', images: [], columns: 3 };
+            
+            newProjects[projectIndex] = { ...project, content: [...content, newBlock] };
+            return { ...prev, projects: newProjects };
+        });
+    };
+
+    const removeBlock = (projectIndex: number, blockId: string) => {
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            const project = newProjects[projectIndex] as Project;
+            const content = (project.content || []).filter(b => b.id !== blockId);
+            newProjects[projectIndex] = { ...project, content };
+            return { ...prev, projects: newProjects };
+        });
+    };
+
+    const reorderBlocks = (projectIndex: number, newContent: ProjectBlock[]) => {
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            const project = newProjects[projectIndex] as Project;
+            newProjects[projectIndex] = { ...project, content: newContent };
+            return { ...prev, projects: newProjects };
+        });
+    };
+
+    const updateBlock = (projectIndex: number, blockId: string, updates: Partial<ProjectBlock>) => {
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            const project = newProjects[projectIndex] as Project;
+            const content = (project.content || []).map((b: ProjectBlock) => 
+                b.id === blockId ? { ...b, ...updates } : b
+            ) as ProjectBlock[];
+            newProjects[projectIndex] = { ...project, content };
             return { ...prev, projects: newProjects };
         });
     };
@@ -898,9 +940,13 @@ function ProjectsTab({ data, setData }: TabProps) {
             <div className="space-y-2">
                 {sortedProjects.map((project, sortedIndex) => {
                     const index = project.originalIndex;
-                    const projectWithImages = project as typeof project & { images?: string[] };
+                    const projectWithImages = project as unknown as Project;
                     const isExpanded = expandedId === project.id;
-                    const imageCount = (projectWithImages.images || []).length + (project.image ? 1 : 0);
+                    const imageCount = (projectWithImages.content || []).reduce((acc, block) => {
+                        if (block.type === 'image') return acc + 1;
+                        if (block.type === 'grid') return acc + (block.images?.length || 0);
+                        return acc;
+                    }, 0) + (project.image ? 1 : 0);
 
                     return (
                         <div
@@ -1045,94 +1091,163 @@ function ProjectsTab({ data, setData }: TabProps) {
                                     <CoverImageUploader
                                         currentImage={project.image}
                                         onImageChange={(url) => handleProjectChange(index, "image", url)}
-                                        recommendedSize="1200 x 800px"
                                     />
 
-                                    {/* Gallery Images */}
-                                    <div className="space-y-3">
-                                        <label className="text-[#8A8A9A] text-sm font-medium block">Galeria de Imagens</label>
-
-                                        {/* Grid Visual Drag and Drop - Drop to Swap */}
-                                        <div className="mt-2">
-                                            <div 
-                                                className="w-full"
-                                                style={{ columns: "3 180px", columnGap: "12px" }}
+                                    {/* Behance-Style Content Builder */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-6 mt-6">
+                                        {/* Main Content Area */}
+                                        <div className="space-y-6">
+                                            <label className="text-[#8A8A9A] text-sm font-medium block mb-2">Conteúdo do Projeto</label>
+                                            
+                                            <Reorder.Group 
+                                                axis="y" 
+                                                values={projectWithImages.content || []} 
+                                                onReorder={(newOrder) => reorderBlocks(index, newOrder as ProjectBlock[])}
+                                                className="space-y-4"
                                             >
-                                                {(projectWithImages.images || []).map((img, imgIndex) => (
-                                                    <motion.div
-                                                        key={img}
-                                                        drag
-                                                        dragSnapToOrigin
-                                                        whileDrag={{ scale: 1.05, zIndex: 100, cursor: 'grabbing' }}
-                                                        onDragEnd={(event, info) => {
-                                                            const x = info.point.x;
-                                                            const y = info.point.y;
-                                                            const element = document.elementFromPoint(x, y);
-                                                            const targetElement = element?.closest('[data-img-index]');
-                                                            
-                                                            if (targetElement) {
-                                                                const targetIndex = parseInt(targetElement.getAttribute('data-img-index') || "-1");
-                                                                if (targetIndex !== -1 && targetIndex !== imgIndex) {
-                                                                    const newImages = [...(projectWithImages.images || [])];
-                                                                    const temp = newImages[imgIndex];
-                                                                    newImages[imgIndex] = newImages[targetIndex];
-                                                                    newImages[targetIndex] = temp;
-                                                                    reorderImages(index, newImages);
-                                                                }
-                                                            }
-                                                        }}
-                                                        data-img-index={imgIndex}
-                                                        className="relative rounded-xl overflow-hidden group/img mb-3 cursor-grab"
-                                                        style={{
-                                                            background: "rgba(6,6,16,0.8)",
-                                                            border: "1px solid rgba(188,210,0,0.1)",
-                                                            breakInside: "avoid",
-                                                            touchAction: "none"
-                                                        }}
+                                                {(projectWithImages.content || []).map((block) => (
+                                                    <Reorder.Item 
+                                                        key={block.id} 
+                                                        value={block}
+                                                        className="relative group/block"
                                                     >
-                                                        {img && (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img
-                                                                src={img}
-                                                                alt=""
-                                                                className="w-full h-auto block pointer-events-none"
-                                                                style={{ display: "block" }}
-                                                            />
-                                                        )}
-                                                        
-                                                        {/* Hover Controls */}
-                                                        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    removeImage(index, imgIndex);
-                                                                }}
-                                                                className="w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                                                                title="Remover imagem"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Drag Indicator Overlay */}
-                                                        <div className="absolute inset-0 bg-[#bcd200]/10 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
-                                                            <div className="bg-black/60 px-3 py-1 rounded-full text-[#bcd200] text-[10px] font-bold uppercase tracking-wider">
-                                                                Solte para trocar
+                                                        <div 
+                                                            className="rounded-xl overflow-hidden p-4 relative"
+                                                            style={{ 
+                                                                background: "rgba(6,6,16,0.6)",
+                                                                border: "1px solid rgba(188,210,0,0.1)"
+                                                            }}
+                                                        >
+                                                            {/* Block Header/Drag Handle */}
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="text-[#bcd200]/40 text-lg cursor-grab active:cursor-grabbing">⠿</div>
+                                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A8A9A]">
+                                                                        {block.type === 'grid' ? 'Grade de fotos' : block.type === 'image' ? 'Imagem única' : 'Texto'}
+                                                                    </span>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => removeBlock(index, block.id)}
+                                                                    className="w-6 h-6 rounded-full bg-[#FF0080]/10 text-[#FF0080] flex items-center justify-center hover:bg-[#FF0080] hover:text-white transition-all text-xs"
+                                                                >✕</button>
                                                             </div>
+
+                                                            {/* Block Content Editing */}
+                                                            {block.type === 'text' && (
+                                                                <TextareaField
+                                                                    label=""
+                                                                    value={block.text}
+                                                                    onChange={(v) => updateBlock(index, block.id, { text: v })}
+                                                                    rows={3}
+                                                                />
+                                                            )}
+
+                                                            {block.type === 'image' && (
+                                                                <div className="space-y-3">
+                                                                    <ImageUploader 
+                                                                        label=""
+                                                                        multiple={false}
+                                                                        onUpload={(url) => updateBlock(index, block.id, { url })}
+                                                                    />
+                                                                    {block.url && (
+                                                                        <div className="relative rounded-lg overflow-hidden h-40 bg-black/40">
+                                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                            <img src={block.url} alt="" className="w-full h-full object-contain" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {block.type === 'grid' && (
+                                                                <div className="space-y-4">
+                                                                    <ImageUploader 
+                                                                        label="Adicionar fotos à grade"
+                                                                        multiple={true}
+                                                                        onUpload={() => {}} 
+                                                                        onUploadMultiple={(urls) => {
+                                                                            const currentImages = (block as any).images || [];
+                                                                            updateBlock(index, block.id, { images: [...currentImages, ...urls] });
+                                                                        }}
+                                                                    />
+                                                                    
+                                                                    <div className="flex items-center gap-4">
+                                                                        <label className="text-[#8A8A9A] text-xs">Colunas:</label>
+                                                                        <div className="flex gap-2">
+                                                                            {[2, 3, 4].map(cols => (
+                                                                                <button
+                                                                                    key={cols}
+                                                                                    onClick={() => updateBlock(index, block.id, { columns: cols })}
+                                                                                    className={`px-3 py-1 rounded-md text-xs transition-colors ${block.columns === cols ? 'bg-[#bcd200] text-black' : 'bg-white/5 text-[#8A8A9A]'}`}
+                                                                                >
+                                                                                    {cols}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {block.images && block.images.length > 0 && (
+                                                                        <div 
+                                                                            className="grid gap-2"
+                                                                            style={{ gridTemplateColumns: `repeat(${block.columns}, 1fr)` }}
+                                                                        >
+                                                                            {block.images.map((imgUrl, imgIdx) => (
+                                                                                <div key={imgIdx} className="relative aspect-square rounded-lg overflow-hidden group/img">
+                                                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                                    <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                                                                    <button 
+                                                                                        onClick={() => {
+                                                                                            const newImages = block.images.filter((_, i) => i !== imgIdx);
+                                                                                            updateBlock(index, block.id, { images: newImages });
+                                                                                        }}
+                                                                                        className="absolute top-1 right-1 w-5 h-5 bg-[#FF0080] text-white rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-[10px]"
+                                                                                    >✕</button>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </motion.div>
+                                                    </Reorder.Item>
                                                 ))}
-                                            </div>
+                                            </Reorder.Group>
+
+                                            {(!projectWithImages.content || projectWithImages.content.length === 0) && (
+                                                <div className="py-12 border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center text-[#8A8A9A] text-sm">
+                                                    <span className="text-4xl mb-3 opacity-20">📂</span>
+                                                    Nenhum módulo adicionado. Comece adicionando um conteúdo à direita.
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Upload New Images */}
-                                        <div className="mt-4">
-                                            <ImageUploader
-                                                label="Adicionar Imagens"
-                                                multiple={true}
-                                                onUpload={(url) => addImage(index, url)}
-                                                onUploadMultiple={(urls) => addMultipleImages(index, urls)}
-                                            />
+                                        {/* Content Sidebar */}
+                                        <div className="space-y-4">
+                                            <div className="sticky top-4">
+                                                <label className="text-[#8A8A9A] text-sm font-medium block mb-4">Adicionar conteúdo</label>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {[
+                                                        { label: 'Imagem', type: 'image', icon: '🖼️' },
+                                                        { label: 'Texto', type: 'text', icon: '📝' },
+                                                        { label: 'Grade de fotos', type: 'grid', icon: '▦' },
+                                                    ].map((item) => (
+                                                        <button
+                                                            key={item.type}
+                                                            onClick={() => addBlock(index, item.type as ProjectBlock['type'])}
+                                                            className="flex flex-col items-center justify-center p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-[#bcd200]/10 hover:border-[#bcd200]/30 transition-all group"
+                                                        >
+                                                            <span className="text-xl mb-2 group-hover:scale-110 transition-transform">{item.icon}</span>
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-white/60 group-hover:text-[#bcd200]">{item.label}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="mt-10 p-4 rounded-xl bg-[#bcd200]/5 border border-[#bcd200]/10">
+                                                    <p className="text-[10px] text-[#8A8A9A] leading-relaxed">
+                                                        <span className="text-[#bcd200] font-bold block mb-1">DICA RAPIDA</span>
+                                                        Adicione vários blocos para criar uma apresentação dinâmica. Você pode arrastar os blocos para trocar a ordem.
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

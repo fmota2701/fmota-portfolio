@@ -2,18 +2,12 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useCallback } from "react";
+import { type Project, type ProjectBlock } from "@/lib/data";
 
 interface ProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    project: {
-        title: string;
-        description: string;
-        category: string;
-        tags: string[];
-        image: string;
-        images?: string[];
-    } | null;
+    project: Project | null;
 }
 
 export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
@@ -137,44 +131,87 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                             </motion.div>
                         </div>
 
-                        {/* Image Gallery - Masonry Layout */}
-                        <div 
-                            className="w-full"
-                        >
-                            <div className="w-full" style={{ columns: "3 250px", columnGap: "16px" }}>
-                            {allImages.map((img, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3 + index * 0.1 }}
-                                    className="relative rounded-xl overflow-hidden mb-4"
-                                    style={{
-                                        background: "rgba(6,6,16,0.8)",
-                                        border: "1px solid rgba(188,210,0,0.1)",
-                                        breakInside: "avoid",
-                                    }}
-                                >
-                                    {img ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img
-                                            src={img}
-                                            alt={`${project.title} - Imagem ${index + 1}`}
-                                            className="w-full h-auto"
-                                            style={{ display: "block" }}
-                                        />
-                                    ) : (
-                                        <div className="w-full aspect-video flex items-center justify-center">
-                                            <span className="text-4xl text-[#bcd200] opacity-30">◆</span>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            ))}
-                            </div>
+                        {/* Modular Content - Behance Style */}
+                        <div className="space-y-12">
+                            {(project.content && project.content.length > 0) ? (
+                                project.content.map((block, idx) => (
+                                    <motion.div
+                                        key={block.id || idx}
+                                        initial={{ opacity: 0, y: 30 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true, margin: "-100px" }}
+                                        transition={{ duration: 0.6, delay: idx * 0.1 }}
+                                        className="w-full"
+                                    >
+                                        {block.type === 'text' && (
+                                            <div className="max-w-3xl mx-auto prose prose-invert">
+                                                <p className="text-lg md:text-xl text-[#8A8A9A] leading-relaxed text-center">
+                                                    {block.text}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {block.type === 'image' && block.url && (
+                                            <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/5">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img 
+                                                    src={block.url} 
+                                                    alt="" 
+                                                    className="w-full h-auto block"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {block.type === 'grid' && block.images && block.images.length > 0 && (
+                                            <div 
+                                                className="grid gap-4 md:gap-6"
+                                                style={{ 
+                                                    gridTemplateColumns: block.images.length === 1 ? '1fr' : `repeat(${block.columns}, 1fr)`
+                                                }}
+                                            >
+                                                {block.images.map((img, imgIdx) => (
+                                                    <div 
+                                                        key={imgIdx} 
+                                                        className="rounded-xl overflow-hidden shadow-xl border border-white/5 transition-transform hover:scale-[1.02] duration-500"
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img 
+                                                            src={img} 
+                                                            alt="" 
+                                                            className="w-full h-auto block"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))
+                            ) : (
+                                /* Fallback for legacy images array */
+                                <div className="w-full" style={{ columns: "2 300px", columnGap: "16px" }}>
+                                    {allImages.map((img, index) => (
+                                        <motion.div
+                                            key={index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 + index * 0.1 }}
+                                            className="relative rounded-xl overflow-hidden mb-4 border border-white/5"
+                                            style={{ breakInside: "avoid" }}
+                                        >
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={img}
+                                                alt={`${project.title} - Imagem ${index + 1}`}
+                                                className="w-full h-auto block"
+                                            />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Empty state */}
-                        {allImages.length === 0 && (
+                        {(!project.content || project.content.length === 0) && allImages.length === 0 && (
                             <div
                                 className="flex flex-col items-center justify-center py-20 rounded-xl"
                                 style={{
@@ -183,7 +220,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                                 }}
                             >
                                 <span className="text-6xl text-[#bcd200] opacity-30 mb-4">◆</span>
-                                <p className="text-[#8A8A9A]">Nenhuma imagem disponível</p>
+                                <p className="text-[#8A8A9A]">Nenhum conteúdo disponível</p>
                             </div>
                         )}
                     </motion.div>

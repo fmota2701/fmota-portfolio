@@ -206,7 +206,7 @@ export function Projects() {
                                             </motion.div>
 
                                             {/* Gallery indicator */}
-                                            {project.images && project.images.length > 0 && (
+                                            {((project as any).content?.length > 0 || (project.images && project.images.length > 0)) && (
                                                 <motion.div
                                                     className="absolute top-4 right-4 z-10"
                                                     initial={{ opacity: 0, x: 10 }}
@@ -222,7 +222,11 @@ export function Projects() {
                                                         }}
                                                     >
                                                         <span>🖼</span>
-                                                        {project.images.length + 1}
+                                                        {((project as any).content || []).reduce((acc: number, block: any) => {
+                                                            if (block.type === 'image') return acc + 1;
+                                                            if (block.type === 'grid') return acc + (block.images?.length || 0);
+                                                            return acc;
+                                                        }, 0) + (project.images?.length || 0) + (project.image ? 1 : 0)}
                                                     </span>
                                                 </motion.div>
                                             )}

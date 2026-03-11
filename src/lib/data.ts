@@ -1,6 +1,41 @@
 // Portfolio Data - Felipe Mota
 
-export const portfolioData = {
+export type ProjectBlock = 
+  | { id: string; type: 'image'; url: string }
+  | { id: string; type: 'text'; text: string }
+  | { id: string; type: 'grid'; images: string[]; columns: number };
+
+export interface Project {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  tags: string[];
+  image: string;
+  images?: string[]; 
+  order?: number;
+  content?: ProjectBlock[];
+}
+
+export interface PortfolioData {
+  personal: {
+    name: string;
+    title: string;
+    subtitle: string;
+    email: string;
+    location: string;
+    whatsapp: string;
+    photo: string;
+    bio: string;
+  };
+  stats: any[];
+  skills: any[];
+  experiences: any[];
+  projects: Project[];
+  social: any[];
+}
+
+export const portfolioData: PortfolioData = {
   personal: {
     name: "Felipe Mota",
     title: "Designer de iGaming",
@@ -124,4 +159,4 @@ Com anos de experiência em motion graphics e key visuals, desenvolvo projetos q
   ],
 };
 
-export type PortfolioData = typeof portfolioData;
+// End of file
