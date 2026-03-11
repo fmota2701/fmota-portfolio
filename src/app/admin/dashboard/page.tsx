@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, Reorder } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { portfolioData as defaultData } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
@@ -860,6 +860,14 @@ function ProjectsTab({ data, setData }: TabProps) {
         });
     };
 
+    const reorderImages = (projectIndex: number, newImages: string[]) => {
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            newProjects[projectIndex] = { ...newProjects[projectIndex], images: newImages };
+            return { ...prev, projects: newProjects };
+        });
+    };
+
     // Sort by order field
     const sortedProjects = [...data.projects]
         .map((p, originalIndex) => ({ ...p, originalIndex }))
@@ -1044,57 +1052,65 @@ function ProjectsTab({ data, setData }: TabProps) {
                                     <div className="space-y-3">
                                         <label className="text-[#8A8A9A] text-sm font-medium block">Galeria de Imagens</label>
 
-                                        {/* Masonry Gallery Grid */}
-                                        <div style={{ columns: "3 200px", columnGap: "12px" }}>
-                                            {(projectWithImages.images || []).map((img, imgIndex) => (
-                                                <div
-                                                    key={imgIndex}
-                                                    className="relative rounded-lg overflow-hidden group/img mb-3"
-                                                    style={{
-                                                        background: "rgba(6,6,16,0.8)",
-                                                        border: "1px solid rgba(188,210,0,0.1)",
-                                                        breakInside: "avoid",
-                                                    }}
-                                                >
-                                                    {img && (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img
-                                                            src={img}
-                                                            alt=""
-                                                            className="w-full h-auto block rounded-lg"
-                                                            style={{ display: "block" }}
-                                                        />
-                                                    )}
-                                                    {/* Image Controls */}
-                                                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => removeImage(index, imgIndex)}
-                                                            className="w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                                                            title="Remover imagem"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                        <div className="flex flex-col gap-1">
+                                        {/* Drag and Drop Gallery - Framer Motion */}
+                                        <div className="mt-2">
+                                            <Reorder.Group 
+                                                axis="y" 
+                                                values={projectWithImages.images || []} 
+                                                onReorder={(newOrder) => reorderImages(index, newOrder)}
+                                                className="space-y-3"
+                                            >
+                                                {(projectWithImages.images || []).map((img, imgIndex) => (
+                                                    <Reorder.Item
+                                                        key={img}
+                                                        value={img}
+                                                        className="relative rounded-xl overflow-hidden group/img cursor-grab active:cursor-grabbing"
+                                                        style={{
+                                                            background: "rgba(6,6,16,0.5)",
+                                                            border: "1px solid rgba(188,210,0,0.1)",
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-4 p-2">
+                                                            {/* Drag Handle & Index */}
+                                                            <div className="flex items-center gap-3 pl-2">
+                                                                <span className="text-[#8A8A9A] text-xs font-mono">{(imgIndex + 1).toString().padStart(2, '0')}</span>
+                                                                <div className="text-[#bcd200]/40 text-lg">⠿</div>
+                                                            </div>
+
+                                                            {/* Image Preview */}
+                                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-black/40 border border-white/5">
+                                                                {img && (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img
+                                                                        src={img}
+                                                                        alt=""
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                )}
+                                                            </div>
+
+                                                            {/* Info */}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-[#8A8A9A] text-xs truncate opacity-60 font-mono">
+                                                                    {img.split('/').pop()?.split('?')[0] || "imagem"}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Remove Button */}
                                                             <button
-                                                                onClick={() => moveGalleryImage(index, imgIndex, "up")}
-                                                                disabled={imgIndex === 0}
-                                                                className="w-7 h-7 bg-black/80 text-white rounded-full text-[10px] cursor-pointer flex items-center justify-center shadow-lg hover:bg-[#bcd200] hover:text-[#0A0A14] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                                                                title="Mover para cima"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeImage(index, imgIndex);
+                                                                }}
+                                                                className="w-8 h-8 rounded-full bg-[#FF0080]/10 text-[#FF0080] flex items-center justify-center mr-2 hover:bg-[#FF0080] hover:text-white transition-all cursor-pointer shadow-lg"
+                                                                title="Remover imagem"
                                                             >
-                                                                ▲
-                                                            </button>
-                                                            <button
-                                                                onClick={() => moveGalleryImage(index, imgIndex, "down")}
-                                                                disabled={imgIndex === (projectWithImages.images || []).length - 1}
-                                                                className="w-7 h-7 bg-black/80 text-white rounded-full text-[10px] cursor-pointer flex items-center justify-center shadow-lg hover:bg-[#bcd200] hover:text-[#0A0A14] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                                                                title="Mover para baixo"
-                                                            >
-                                                                ▼
+                                                                ✕
                                                             </button>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                    </Reorder.Item>
+                                                ))}
+                                            </Reorder.Group>
                                         </div>
 
                                         {/* Upload New Images */}
