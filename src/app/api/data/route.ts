@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { portfolioData as defaultData } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 const COLLECTION = "portfolio";
 const DOC_ID = "data";
 
