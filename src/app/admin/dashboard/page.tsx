@@ -842,6 +842,24 @@ function ProjectsTab({ data, setData }: TabProps) {
         });
     };
 
+    const moveGalleryImage = (projectIndex: number, imageIndex: number, direction: "up" | "down") => {
+        setData((prev) => {
+            const newProjects = [...prev.projects];
+            const project = newProjects[projectIndex] as typeof newProjects[0] & { images?: string[] };
+            const images = [...(project.images || [])];
+
+            const targetIndex = direction === "up" ? imageIndex - 1 : imageIndex + 1;
+            if (targetIndex < 0 || targetIndex >= images.length) return prev;
+
+            const temp = images[imageIndex];
+            images[imageIndex] = images[targetIndex];
+            images[targetIndex] = temp;
+
+            newProjects[projectIndex] = { ...newProjects[projectIndex], images };
+            return { ...prev, projects: newProjects };
+        });
+    };
+
     // Sort by order field
     const sortedProjects = [...data.projects]
         .map((p, originalIndex) => ({ ...p, originalIndex }))
@@ -1047,12 +1065,34 @@ function ProjectsTab({ data, setData }: TabProps) {
                                                             style={{ display: "block" }}
                                                         />
                                                     )}
-                                                    <button
-                                                        onClick={() => removeImage(index, imgIndex)}
-                                                        className="absolute top-2 right-2 w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer flex items-center justify-center shadow-lg"
-                                                    >
-                                                        ✕
-                                                    </button>
+                                                    {/* Image Controls */}
+                                                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => removeImage(index, imgIndex)}
+                                                            className="w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                                                            title="Remover imagem"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                        <div className="flex flex-col gap-1">
+                                                            <button
+                                                                onClick={() => moveGalleryImage(index, imgIndex, "up")}
+                                                                disabled={imgIndex === 0}
+                                                                className="w-7 h-7 bg-black/80 text-white rounded-full text-[10px] cursor-pointer flex items-center justify-center shadow-lg hover:bg-[#bcd200] hover:text-[#0A0A14] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                title="Mover para cima"
+                                                            >
+                                                                ▲
+                                                            </button>
+                                                            <button
+                                                                onClick={() => moveGalleryImage(index, imgIndex, "down")}
+                                                                disabled={imgIndex === (projectWithImages.images || []).length - 1}
+                                                                className="w-7 h-7 bg-black/80 text-white rounded-full text-[10px] cursor-pointer flex items-center justify-center shadow-lg hover:bg-[#bcd200] hover:text-[#0A0A14] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                title="Mover para baixo"
+                                                            >
+                                                                ▼
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

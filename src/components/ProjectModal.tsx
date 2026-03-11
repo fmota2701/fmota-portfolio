@@ -137,18 +137,22 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                             </motion.div>
                         </div>
 
-                        {/* Image Grid - 3 Columns, Respects Original Dimensions */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {/* Image Gallery - Masonry Layout */}
+                        <div 
+                            className="w-full"
+                        >
+                            <div className="w-full" style={{ columns: "3 250px", columnGap: "16px" }}>
                             {allImages.map((img, index) => (
                                 <motion.div
                                     key={index}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 + index * 0.1 }}
-                                    className="relative rounded-xl overflow-hidden"
+                                    className="relative rounded-xl overflow-hidden mb-4"
                                     style={{
                                         background: "rgba(6,6,16,0.8)",
                                         border: "1px solid rgba(188,210,0,0.1)",
+                                        breakInside: "avoid",
                                     }}
                                 >
                                     {img ? (
@@ -166,6 +170,7 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                                     )}
                                 </motion.div>
                             ))}
+                            </div>
                         </div>
 
                         {/* Empty state */}
