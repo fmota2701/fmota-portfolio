@@ -672,8 +672,8 @@ function ExperiencesTab({ data, setData }: TabProps) {
         setData((prev) => ({
             ...prev,
             experiences: [
-                ...(prev.experiences || []),
                 { id: newId, role: "Nova Posição", company: "Empresa", period: "2024 - Presente", description: "" },
+                ...(prev.experiences || []),
             ],
         }));
     };
