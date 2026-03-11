@@ -1052,25 +1052,42 @@ function ProjectsTab({ data, setData }: TabProps) {
                                     <div className="space-y-3">
                                         <label className="text-[#8A8A9A] text-sm font-medium block">Galeria de Imagens</label>
 
-                                        {/* Grid Drag and Drop Gallery - Framer Motion */}
+                                        {/* Grid Visual Drag and Drop - Drop to Swap */}
                                         <div className="mt-2">
-                                            <Reorder.Group 
-                                                axis="y" 
-                                                values={projectWithImages.images || []} 
-                                                onReorder={(newOrder) => reorderImages(index, newOrder)}
+                                            <div 
                                                 className="w-full"
                                                 style={{ columns: "3 180px", columnGap: "12px" }}
                                             >
-                                                {(projectWithImages.images || []).map((img) => (
-                                                    <Reorder.Item
+                                                {(projectWithImages.images || []).map((img, imgIndex) => (
+                                                    <motion.div
                                                         key={img}
-                                                        value={img}
-                                                        className="relative rounded-xl overflow-hidden group/img mb-3 cursor-grab active:cursor-grabbing"
+                                                        drag
+                                                        dragSnapToOrigin
+                                                        whileDrag={{ scale: 1.05, zIndex: 100, cursor: 'grabbing' }}
+                                                        onDragEnd={(event, info) => {
+                                                            const x = info.point.x;
+                                                            const y = info.point.y;
+                                                            const element = document.elementFromPoint(x, y);
+                                                            const targetElement = element?.closest('[data-img-index]');
+                                                            
+                                                            if (targetElement) {
+                                                                const targetIndex = parseInt(targetElement.getAttribute('data-img-index') || "-1");
+                                                                if (targetIndex !== -1 && targetIndex !== imgIndex) {
+                                                                    const newImages = [...(projectWithImages.images || [])];
+                                                                    const temp = newImages[imgIndex];
+                                                                    newImages[imgIndex] = newImages[targetIndex];
+                                                                    newImages[targetIndex] = temp;
+                                                                    reorderImages(index, newImages);
+                                                                }
+                                                            }
+                                                        }}
+                                                        data-img-index={imgIndex}
+                                                        className="relative rounded-xl overflow-hidden group/img mb-3 cursor-grab"
                                                         style={{
                                                             background: "rgba(6,6,16,0.8)",
                                                             border: "1px solid rgba(188,210,0,0.1)",
                                                             breakInside: "avoid",
-                                                            display: "block"
+                                                            touchAction: "none"
                                                         }}
                                                     >
                                                         {img && (
@@ -1078,7 +1095,7 @@ function ProjectsTab({ data, setData }: TabProps) {
                                                             <img
                                                                 src={img}
                                                                 alt=""
-                                                                className="w-full h-auto block"
+                                                                className="w-full h-auto block pointer-events-none"
                                                                 style={{ display: "block" }}
                                                             />
                                                         )}
@@ -1088,7 +1105,6 @@ function ProjectsTab({ data, setData }: TabProps) {
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    const imgIndex = (projectWithImages.images || []).indexOf(img);
                                                                     removeImage(index, imgIndex);
                                                                 }}
                                                                 className="w-7 h-7 bg-[#FF0080] text-white rounded-full text-xs cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
@@ -1101,12 +1117,12 @@ function ProjectsTab({ data, setData }: TabProps) {
                                                         {/* Drag Indicator Overlay */}
                                                         <div className="absolute inset-0 bg-[#bcd200]/10 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                                                             <div className="bg-black/60 px-3 py-1 rounded-full text-[#bcd200] text-[10px] font-bold uppercase tracking-wider">
-                                                                Movendo
+                                                                Solte para trocar
                                                             </div>
                                                         </div>
-                                                    </Reorder.Item>
+                                                    </motion.div>
                                                 ))}
-                                            </Reorder.Group>
+                                            </div>
                                         </div>
 
                                         {/* Upload New Images */}
